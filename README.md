@@ -51,6 +51,30 @@ No profile page changes needed — the subscription management section auto-inje
 
 ## How it works
 
+### Use the Filament controls with an existing PWA
+
+If the application already has its own manifest, service worker and Web Push backend, set `existing_pwa` in `config/browser-notifications.php`. This configuration points the profile controls at the application's worker and routes.
+
+```php
+return [
+    'existing_pwa' => [
+        'panel' => 'app',
+        'service_worker' => '/app-sw.js',
+        'scope' => '/app/',
+        'public_key_config' => 'incidents.vapid.public_key',
+        'subscribe_route' => 'app.push.store',
+        'unsubscribe_route' => 'app.push.destroy',
+        'status_route' => 'app.push.status',
+    ],
+];
+```
+
+Register `\Emuniq\FilamentBrowserNotifications\BrowserNotificationsPlugin::make()` in that panel's plugin list. The panel's existing profile must be enabled. In this mode the package renders the controls for the current device and registers the configured worker. The application manages the manifest, subscription storage, authorization, and delivery. The package skips automatic panel registration, the global manifest and subscription routes, the notification listener, and installation commands.
+
+All three routes must be authenticated and accept JSON. The subscribe route is a `POST` with the browser's subscription, including `endpoint` and `keys`. The status route is a `POST` with `endpoint` and returns `{"active":true}` only when that endpoint belongs to the current user and panel. The unsubscribe route is a `DELETE` with `endpoint`. The app must validate the endpoint and enforce ownership in its routes. Keep the existing worker URL, scope, and VAPID public key to reuse subscriptions.
+
+### Package-managed push
+
 ```
 Your existing code (unchanged)
 |

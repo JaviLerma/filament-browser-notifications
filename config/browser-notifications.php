@@ -2,6 +2,9 @@
 
 return [
 
+    // An application with its own PWA and push backend can use the Filament profile controls.
+    'existing_pwa' => null,
+
     /*
     |--------------------------------------------------------------------------
     | Prompt delay (seconds)

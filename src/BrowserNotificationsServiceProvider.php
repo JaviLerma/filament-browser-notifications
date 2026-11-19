@@ -23,6 +23,10 @@ class BrowserNotificationsServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'filament-browser-notifications');
         $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'filament-browser-notifications');
 
+        if (config('browser-notifications.existing_pwa') !== null) {
+            return;
+        }
+
         if (config('webpush.vapid.public_key')) {
             SendWebPushOnDatabaseNotification::boot();
         }

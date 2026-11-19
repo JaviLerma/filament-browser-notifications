@@ -3,6 +3,7 @@
 namespace Emuniq\FilamentBrowserNotifications;
 
 use Filament\Contracts\Plugin;
+use Filament\Facades\Filament;
 use Filament\Panel;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
@@ -53,6 +54,28 @@ class BrowserNotificationsPlugin implements Plugin
 
     public function register(Panel $panel): void
     {
+        $existingPwa = config('browser-notifications.existing_pwa');
+        if ($existingPwa !== null) {
+            if ($panel->getId() === $existingPwa['panel']) {
+                $panel->renderHook(
+                    PanelsRenderHook::HEAD_END,
+                    fn () => view('filament-browser-notifications::existing-pwa-script', [
+                        'options' => [
+                            'worker' => $existingPwa['service_worker'],
+                            'scope' => $existingPwa['scope'],
+                            'publicKey' => config($existingPwa['public_key_config']),
+                            'subscribeUrl' => route($existingPwa['subscribe_route'], absolute: false),
+                            'unsubscribeUrl' => route($existingPwa['unsubscribe_route'], absolute: false),
+                            'statusUrl' => route($existingPwa['status_route'], absolute: false),
+                            'messages' => __('filament-browser-notifications::profile.existing_pwa'),
+                        ],
+                    ]),
+                );
+            }
+
+            return;
+        }
+
         $panel->renderHook(
             PanelsRenderHook::HEAD_END,
             fn () => $this->renderVapidMeta(),
@@ -68,7 +91,8 @@ class BrowserNotificationsPlugin implements Plugin
 
     public function boot(Panel $panel): void
     {
-        if (! $this->showProfileSection) {
+        $existingPwa = config('browser-notifications.existing_pwa');
+        if (! $this->showProfileSection || ($existingPwa !== null && $panel->getId() !== $existingPwa['panel'])) {
             return;
         }
 
@@ -91,8 +115,10 @@ class BrowserNotificationsPlugin implements Plugin
         foreach ([PanelsRenderHook::PAGE_END, PanelsRenderHook::SIMPLE_PAGE_END] as $hook) {
             FilamentView::registerRenderHook(
                 $hook,
-                fn () => auth()->check()
-                    ? view('filament-browser-notifications::profile-section')->render()
+                fn () => auth()->check() && ($existingPwa === null || Filament::getCurrentPanel()?->getId() === $panel->getId())
+                    ? view($existingPwa === null
+                        ? 'filament-browser-notifications::profile-section'
+                        : 'filament-browser-notifications::existing-pwa-profile')->render()
                     : '',
                 scopes: $profilePage,
             );
