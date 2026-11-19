@@ -59,17 +59,19 @@ class BrowserNotificationsPlugin implements Plugin
             if ($panel->getId() === $existingPwa['panel']) {
                 $panel->renderHook(
                     PanelsRenderHook::HEAD_END,
-                    fn () => view('filament-browser-notifications::existing-pwa-script', [
-                        'options' => [
-                            'worker' => $existingPwa['service_worker'],
-                            'scope' => $existingPwa['scope'],
-                            'publicKey' => config($existingPwa['public_key_config']),
-                            'subscribeUrl' => route($existingPwa['subscribe_route'], absolute: false),
-                            'unsubscribeUrl' => route($existingPwa['unsubscribe_route'], absolute: false),
-                            'statusUrl' => route($existingPwa['status_route'], absolute: false),
-                            'messages' => __('filament-browser-notifications::profile.existing_pwa'),
-                        ],
-                    ]),
+                    fn () => Filament::getCurrentPanel()?->getId() === $panel->getId()
+                        ? view('filament-browser-notifications::existing-pwa-script', [
+                            'options' => [
+                                'worker' => $existingPwa['service_worker'],
+                                'scope' => $existingPwa['scope'],
+                                'publicKey' => config($existingPwa['public_key_config']),
+                                'subscribeUrl' => route($existingPwa['subscribe_route'], absolute: false),
+                                'unsubscribeUrl' => route($existingPwa['unsubscribe_route'], absolute: false),
+                                'statusUrl' => route($existingPwa['status_route'], absolute: false),
+                                'messages' => __('filament-browser-notifications::profile.existing_pwa'),
+                            ],
+                        ])
+                        : '',
                 );
             }
 
